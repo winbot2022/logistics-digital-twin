@@ -55,12 +55,11 @@ st.markdown("### 発送ライン・人員配置最適化シミュレーター")
 # --- 5. サイドバーUI（スマホ最適化） ---
 st.sidebar.header("診断条件の設定")
 
-avg_orders_per_hour = st.sidebar.number_input("1時間あたりの平均注文数 (件)", value=default_orders, step=5)
+avg_orders_per_hour = st.sidebar.number_input("1時間あたりの平均注文数 (件)", value=default_orders, min_value=1, step=5)
+num_packers = st.sidebar.slider("出勤スタッフ数 (人)", 1, 10, value=default_staff) # sliderは最小1になっているのでOK
 arrival_interval = 60.0 / avg_orders_per_hour
 
-num_packers = st.sidebar.slider("出勤スタッフ数 (人)", 1, 10, value=default_staff)
-
-avg_packing_time = st.sidebar.number_input("平均梱包時間 (分)", value=default_time, step=0.1)
+avg_packing_time = st.sidebar.number_input("平均梱包時間 (分)", value=default_time, min_value=0.1, step=0.1)
 
 sim_hours = st.sidebar.slider("稼働時間 (時間)", 1, 24, 8)
 
