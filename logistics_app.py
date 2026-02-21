@@ -1,123 +1,116 @@
-import streamlit as st # [cite: 92]
-import simpy # [cite: 2, 68]
-import random # [cite: 68]
-import pandas as pd # [cite: 146]
-import numpy as np # [cite: 68]
-import matplotlib.pyplot as plt # [cite: 150]
+import streamlit as st
+import simpy
+import random
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 import os
 import matplotlib.font_manager as fm
 
-# --- 0. 基本設定と日本語フォント対策 ---
-st.set_page_config(page_title="物流デジタルツイン MVP", layout="wide")
+# --- 4. タイトルとメタ情報の「ブランド化」 ---
+st.set_page_config(
+    page_title="物流デジタルツイン診断 | 発送ライン人員配置シミュレーター",
+    page_icon="📦",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# Linuxサーバー（Streamlit Cloud）用フォント設定
-# [cite: 92, 97]
+# 日本語フォント設定
 jp_font_path = '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc'
 if os.path.exists(jp_font_path):
     prop = fm.FontProperties(fname=jp_font_path)
     plt.rcParams['font.family'] = prop.get_name()
 
-# --- 1. 受信用魔法：URLパラメータを読み取る ---
-# [cite: 133, 136]
+# --- 受信用魔法（URLパラメータ） ---
 query_params = st.query_params
-
-# URLから値を取得（なければデフォルト値をセット）
 default_orders = int(query_params.get("orders", 60))
 default_staff = int(query_params.get("staff", 3))
 default_time = float(query_params.get("time", 2.5))
 
-# --- 2. シミュレーションロジック部 (SimPy) ---
+# --- シミュレーションロジック (正規分布版) ---
 def packing_process(env, name, packer_resource, packing_time_mean, wait_times):
     arrival_time = env.now
-    
-    # 梱包台（スタッフ）が空くのを待つ
     with packer_resource.request() as request:
         yield request
         wait_time = env.now - arrival_time
         wait_times.append(wait_time)
         
-        # 梱包作業の実施（正規分布で、人間らしい適度なバラツキを表現）
-        # 平均 packing_time_mean, 標準偏差をその20%に設定
+        # 正規分布による「人間らしい」ばらつき
         std_dev = packing_time_mean * 0.2
         service_time = max(0.1, random.gauss(packing_time_mean, std_dev))
         yield env.timeout(service_time)
 
 def setup(env, num_packers, arrival_interval, packing_time_mean, wait_times):
-    # スタッフ数（リソースのキャパシティ）を設定 [cite: 62, 74]
     packer_resource = simpy.Resource(env, capacity=num_packers)
     order_count = 0
-    
     while True:
-        # 次の注文が来るまでの時間 [cite: 11, 80]
         yield env.timeout(random.expovariate(1.0 / arrival_interval))
         order_count += 1
         env.process(packing_process(env, f'Order {order_count}', packer_resource, packing_time_mean, wait_times))
 
-# --- 3. Streamlit フロントエンド (UI部) ---
-# [cite: 92, 135]
-st.title("📦 EC梱包ライン・人員配置シミュレーター")
-st.sidebar.header("明日の稼働条件を設定")
+# --- UI部 ---
+st.title("📦 物流デジタルツイン診断")
+st.markdown("### 発送ライン・人員配置最適化シミュレーター")
 
-# サイドバーウィジェットの配置 [cite: 138, 140, 161]
-st.sidebar.subheader("1. 注文の負荷")
-avg_orders_per_hour = st.sidebar.number_input(
-    "1時間あたりの平均注文数 (件)", 
-    value=default_orders, 
-    step=5
-)
+# サイドバー設定
+st.sidebar.header("診断条件の設定")
+avg_orders_per_hour = st.sidebar.number_input("1時間あたりの平均注文数 (件)", value=default_orders, step=5)
 arrival_interval = 60.0 / avg_orders_per_hour
+num_packers = st.sidebar.slider("出勤スタッフ数 (人)", 1, 10, value=default_staff)
+avg_packing_time = st.sidebar.number_input("平均梱包時間 (分)", value=default_time, step=0.1)
+sim_hours = st.sidebar.slider("稼働時間 (時間)", 1, 24, 8)
 
-st.sidebar.subheader("2. 現場のキャパシティ")
-num_packers = st.sidebar.slider(
-    "出勤する梱包スタッフ数 (人)", 
-    1, 10, 
-    value=default_staff
-)
-avg_packing_time = st.sidebar.number_input(
-    "1件あたりの平均梱包時間 (分)", 
-    value=default_time, 
-    step=0.1
-)
+# --- 3. 「利用上の注意（免責事項）」の明記 ---
+st.sidebar.markdown("---")
+st.sidebar.caption("""
+**【免責事項】**
+本ツールは理論上のシミュレーション結果を提供するものであり、実際の現場環境（機器故障、急な欠勤、作業ミス等）を保証するものではありません。経営・運用判断の参考値としてご活用ください。
+""")
 
-st.sidebar.subheader("3. シミュレーション期間")
-sim_hours = st.sidebar.slider("稼働時間 (時間)", 1, 24, 8) # [cite: 69, 142]
-
-# シミュレーション実行ボタン [cite: 156]
-if st.sidebar.button("シミュレーション実行"):
+if st.sidebar.button("シミュレーションを実行して分析"):
     wait_times = []
-    env = simpy.Environment() # [cite: 73]
-    env.process(setup(env, num_packers, arrival_interval, avg_packing_time, wait_times)) # [cite: 86]
-    env.run(until=sim_hours * 60) # [cite: 79]
+    env = simpy.Environment()
+    env.process(setup(env, num_packers, arrival_interval, avg_packing_time, wait_times))
+    env.run(until=sim_hours * 60)
 
-    # --- 4. 結果の可視化 ---
-    st.header("📊 シミュレーション結果レポート") # [cite: 134]
-    
+    # 結果レポート
+    st.header("📊 分析レポート")
     col1, col2, col3 = st.columns(3)
     with col1:
-        # 総処理注文数 [cite: 107, 144]
-        st.metric("総処理注文数", f"{len(wait_times)} 件")
+        st.metric("予測総処理数", f"{len(wait_times)} 件")
     with col2:
-        # 平均待ち時間 [cite: 23, 147]
         avg_wait = np.mean(wait_times) if wait_times else 0
         st.metric("平均待ち時間", f"{avg_wait:.2f} 分")
     with col3:
-        # 最大待ち時間 [cite: 24, 147]
         max_wait = np.max(wait_times) if wait_times else 0
         st.metric("最大待ち時間", f"{max_wait:.2f} 分", delta=f"{max_wait - 10:.1f}分 (目安10分)", delta_color="inverse")
 
-    # 待ち時間の分布グラフ [cite: 52, 150]
     fig, ax = plt.subplots()
     ax.hist(wait_times, bins=20, color='skyblue', edgecolor='black')
-    ax.set_title("待ち時間の分布（お客様への発送遅延リスク）")
+    ax.set_title("発送遅延リスク（待ち時間の分布）")
     ax.set_xlabel("待ち時間 (分)")
     ax.set_ylabel("注文数")
     st.pyplot(fig)
 
-    # 現場への改善アドバイス [cite: 59, 145]
-    st.subheader("💡 現場へのアドバイス")
+    # アドバイス
+    st.subheader("💡 診断アドバイス")
     if max_wait > 15:
-        st.error(f"警告：最大待ち時間が{max_wait:.1f}分に達しています。発送締め切りに間に合わないリスクが高いです。スタッフを1名追加するか、残業を検討してください。")
+        st.error(f"【要改善】最大待ち時間が{max_wait:.1f}分と予測されます。発送締め切りに間に合わないリスクがあるため、スタッフの追加検討をお勧めします。")
     elif avg_wait < 1:
-        st.success("現在は非常に余裕があります。スタッフを1名他の工程（検品など）に回しても、発送品質は維持できる可能性があります。")
+        st.success("【最適】非常にスムーズな稼働です。余剰人員を他の工程へ配置転換する余裕があります。")
     else:
-        st.info("適切な人員配置です。現状のシフトで安定した稼働が見込めます。")
+        st.info("【安定】適切な人員配置です。安定した稼働が見込めます。")
+
+    # --- 1 & 2. 「出口」と「お問い合わせ」ボタンの設置 ---
+    st.markdown("---")
+    st.subheader("🚀 次のステップへ：現場をさらに進化させる")
+    
+    c1, c2 = st.columns(2)
+    with c1:
+        st.info("**本格導入・カスタマイズ相談**\n\n貴社の実データ（曜日別波動、商品サイズ別時間）を反映した専用モデルを構築します。")
+        # リンク先はご自身のGoogleフォームや問い合わせページに変更してください
+        st.link_button("無料相談・デモ予約", "https://your-contact-form-url.com")
+    
+    with c2:
+        st.success("**無料トライアル実施中**\n\n月額1万円で、毎日の人員配置を最適化する本格運用ダッシュボードをご提供します。")
+        st.link_button("月額プラン詳細を見る", "https://your-service-page.com")
