@@ -122,4 +122,4 @@ if st.sidebar.button("シミュレーションを実行", use_container_width=Tr
     
     with c2:
         st.success("**月額1万円で本格運用**\n\n人員配置を毎日最適化するダッシュボードを提供。")
-        st.link_button("サービス詳細", "https://victorconsulting.jp/simulation/", use_container_width=True)
+        st.link_button("サービス詳細", "https://victorconsulting.jp/logistics-digital-twin/", use_container_width=True)
