@@ -118,8 +118,8 @@ if st.sidebar.button("シミュレーションを実行", use_container_width=Tr
     with c1:
         st.info("**本格導入・カスタマイズ相談**\n\n貴社の実データを反映した専用モデルを構築。")
         # リンク先は適宜修正してください
-        st.link_button("無料相談・予約", "https://tally.so/r/your-id", use_container_width=True)
+        st.link_button("無料相談・予約", "https://victorconsulting.jp/contact/", use_container_width=True)
     
     with c2:
         st.success("**月額1万円で本格運用**\n\n人員配置を毎日最適化するダッシュボードを提供。")
-        st.link_button("サービス詳細", "https://your-service-page.com", use_container_width=True)
+        st.link_button("サービス詳細", "https://victorconsulting.jp/simulation/", use_container_width=True)
