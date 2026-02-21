@@ -36,9 +36,10 @@ def packing_process(env, name, packer_resource, packing_time_mean, wait_times):
         wait_time = env.now - arrival_time
         wait_times.append(wait_time)
         
-        # 梱包作業の実施（指数分布でバラツキを表現）
-        # [cite: 14, 79]
-        service_time = random.expovariate(1.0 / packing_time_mean)
+        # 梱包作業の実施（正規分布で、人間らしい適度なバラツキを表現）
+        # 平均 packing_time_mean, 標準偏差をその20%に設定
+        std_dev = packing_time_mean * 0.2
+        service_time = max(0.1, random.gauss(packing_time_mean, std_dev))
         yield env.timeout(service_time)
 
 def setup(env, num_packers, arrival_interval, packing_time_mean, wait_times):
