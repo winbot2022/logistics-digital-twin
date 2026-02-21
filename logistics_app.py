@@ -4,7 +4,16 @@ import random
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import japanize_matplotlib
+import os
+
+import matplotlib.font_manager as fm
+
+# 日本語フォントの設定（Linuxサーバー用）
+# fonts-noto-cjk をインストールするとこのパスに配置されます
+jp_font_path = '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc'
+if os.path.exists(jp_font_path):
+    prop = fm.FontProperties(fname=jp_font_path)
+    plt.rcParams['font.family'] = prop.get_name()
 
 # --- 追加：URLパラメータを読み取る ---
 query_params = st.query_params
