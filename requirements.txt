@@ -3,3 +3,4 @@ simpy
 pandas
 numpy
 matplotlib
+japanize-matplotlib
