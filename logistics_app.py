@@ -1,9 +1,9 @@
-import streamlit as st
-import simpy
-import random
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+import streamlit as st # [cite: 92]
+import simpy # [cite: 2, 68]
+import random # [cite: 68]
+import pandas as pd # [cite: 146]
+import numpy as np # [cite: 68]
+import matplotlib.pyplot as plt # [cite: 150]
 import os
 import matplotlib.font_manager as fm
 
@@ -11,13 +11,14 @@ import matplotlib.font_manager as fm
 st.set_page_config(page_title="物流デジタルツイン MVP", layout="wide")
 
 # Linuxサーバー（Streamlit Cloud）用フォント設定
-[cite_start]# [cite: 92]
+# [cite: 92, 97]
 jp_font_path = '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc'
 if os.path.exists(jp_font_path):
     prop = fm.FontProperties(fname=jp_font_path)
     plt.rcParams['font.family'] = prop.get_name()
 
 # --- 1. 受信用魔法：URLパラメータを読み取る ---
+# [cite: 133, 136]
 query_params = st.query_params
 
 # URLから値を取得（なければデフォルト値をセット）
@@ -36,26 +37,27 @@ def packing_process(env, name, packer_resource, packing_time_mean, wait_times):
         wait_times.append(wait_time)
         
         # 梱包作業の実施（指数分布でバラツキを表現）
-        [cite_start]# [cite: 79]
+        # [cite: 14, 79]
         service_time = random.expovariate(1.0 / packing_time_mean)
         yield env.timeout(service_time)
 
 def setup(env, num_packers, arrival_interval, packing_time_mean, wait_times):
-    # [cite_start]スタッフ数（リソースのキャパシティ）を設定 [cite: 73, 75]
+    # スタッフ数（リソースのキャパシティ）を設定 [cite: 62, 74]
     packer_resource = simpy.Resource(env, capacity=num_packers)
     order_count = 0
     
     while True:
-        # [cite_start]次の注文が来るまでの時間 [cite: 80]
+        # 次の注文が来るまでの時間 [cite: 11, 80]
         yield env.timeout(random.expovariate(1.0 / arrival_interval))
         order_count += 1
         env.process(packing_process(env, f'Order {order_count}', packer_resource, packing_time_mean, wait_times))
 
 # --- 3. Streamlit フロントエンド (UI部) ---
-# [cite_start]2020年の資料に基づいたタイトルとウィジェット構成 [cite: 135, 154]
+# [cite: 92, 135]
 st.title("📦 EC梱包ライン・人員配置シミュレーター")
 st.sidebar.header("明日の稼働条件を設定")
 
+# サイドバーウィジェットの配置 [cite: 138, 140, 161]
 st.sidebar.subheader("1. 注文の負荷")
 avg_orders_per_hour = st.sidebar.number_input(
     "1時間あたりの平均注文数 (件)", 
@@ -77,32 +79,32 @@ avg_packing_time = st.sidebar.number_input(
 )
 
 st.sidebar.subheader("3. シミュレーション期間")
-# [cite_start]シミュレーション時間の設定 [cite: 142]
-sim_hours = st.sidebar.slider("稼働時間 (時間)", 1, 24, 8)
+sim_hours = st.sidebar.slider("稼働時間 (時間)", 1, 24, 8) # [cite: 69, 142]
 
+# シミュレーション実行ボタン [cite: 156]
 if st.sidebar.button("シミュレーション実行"):
     wait_times = []
-    [cite_start]env = simpy.Environment() # [cite: 73]
-    env.process(setup(env, num_packers, arrival_interval, avg_packing_time, wait_times))
-    env.run(until=sim_hours * 60)
+    env = simpy.Environment() # [cite: 73]
+    env.process(setup(env, num_packers, arrival_interval, avg_packing_time, wait_times)) # [cite: 86]
+    env.run(until=sim_hours * 60) # [cite: 79]
 
     # --- 4. 結果の可視化 ---
-    st.header("📊 シミュレーション結果レポート")
+    st.header("📊 シミュレーション結果レポート") # [cite: 134]
     
     col1, col2, col3 = st.columns(3)
     with col1:
-        # [cite_start]総来客数に相当する処理数 [cite: 22, 107]
+        # 総処理注文数 [cite: 107, 144]
         st.metric("総処理注文数", f"{len(wait_times)} 件")
     with col2:
-        # [cite_start]平均待ち時間 [cite: 23, 118]
+        # 平均待ち時間 [cite: 23, 147]
         avg_wait = np.mean(wait_times) if wait_times else 0
         st.metric("平均待ち時間", f"{avg_wait:.2f} 分")
     with col3:
-        # [cite_start]最大待ち時間 [cite: 24, 121]
+        # 最大待ち時間 [cite: 24, 147]
         max_wait = np.max(wait_times) if wait_times else 0
         st.metric("最大待ち時間", f"{max_wait:.2f} 分", delta=f"{max_wait - 10:.1f}分 (目安10分)", delta_color="inverse")
 
-    # [cite_start]待ち時間の分布グラフ [cite: 150]
+    # 待ち時間の分布グラフ [cite: 52, 150]
     fig, ax = plt.subplots()
     ax.hist(wait_times, bins=20, color='skyblue', edgecolor='black')
     ax.set_title("待ち時間の分布（お客様への発送遅延リスク）")
@@ -110,6 +112,7 @@ if st.sidebar.button("シミュレーション実行"):
     ax.set_ylabel("注文数")
     st.pyplot(fig)
 
+    # 現場への改善アドバイス [cite: 59, 145]
     st.subheader("💡 現場へのアドバイス")
     if max_wait > 15:
         st.error(f"警告：最大待ち時間が{max_wait:.1f}分に達しています。発送締め切りに間に合わないリスクが高いです。スタッフを1名追加するか、残業を検討してください。")
