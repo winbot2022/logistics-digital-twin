@@ -4,6 +4,7 @@ import random
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import japanize_matplotlib
 
 # --- 追加：URLパラメータを読み取る ---
 query_params = st.query_params
