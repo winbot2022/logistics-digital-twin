@@ -11,13 +11,13 @@ import matplotlib.font_manager as fm
 st.set_page_config(page_title="物流デジタルツイン MVP", layout="wide")
 
 # Linuxサーバー（Streamlit Cloud）用フォント設定
+[cite_start]# [cite: 92]
 jp_font_path = '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc'
 if os.path.exists(jp_font_path):
     prop = fm.FontProperties(fname=jp_font_path)
     plt.rcParams['font.family'] = prop.get_name()
 
 # --- 1. 受信用魔法：URLパラメータを読み取る ---
-# 例: https://xxx.streamlit.app/?orders=120&staff=5&time=3.5
 query_params = st.query_params
 
 # URLから値を取得（なければデフォルト値をセット）
@@ -29,38 +29,40 @@ default_time = float(query_params.get("time", 2.5))
 def packing_process(env, name, packer_resource, packing_time_mean, wait_times):
     arrival_time = env.now
     
-    # [cite_start]梱包台（スタッフ）が空くのを待つ [cite: 79]
+    # 梱包台（スタッフ）が空くのを待つ
     with packer_resource.request() as request:
         yield request
         wait_time = env.now - arrival_time
         wait_times.append(wait_time)
         
-        # [cite_start]梱包作業の実施（指数分布でバラツキを表現） [cite: 80]
+        # 梱包作業の実施（指数分布でバラツキを表現）
+        [cite_start]# [cite: 79]
         service_time = random.expovariate(1.0 / packing_time_mean)
         yield env.timeout(service_time)
 
 def setup(env, num_packers, arrival_interval, packing_time_mean, wait_times):
-    [cite_start]packer_resource = simpy.Resource(env, capacity=num_packers) # [cite: 73]
+    # [cite_start]スタッフ数（リソースのキャパシティ）を設定 [cite: 73, 75]
+    packer_resource = simpy.Resource(env, capacity=num_packers)
     order_count = 0
     
     while True:
-        # 次の注文が来るまでの時間
+        # [cite_start]次の注文が来るまでの時間 [cite: 80]
         yield env.timeout(random.expovariate(1.0 / arrival_interval))
         order_count += 1
         env.process(packing_process(env, f'Order {order_count}', packer_resource, packing_time_mean, wait_times))
 
 # --- 3. Streamlit フロントエンド (UI部) ---
+# [cite_start]2020年の資料に基づいたタイトルとウィジェット構成 [cite: 135, 154]
 st.title("📦 EC梱包ライン・人員配置シミュレーター")
 st.sidebar.header("明日の稼働条件を設定")
 
-# [cite_start]URLパラメータと連動した入力ウィジェット [cite: 132-142]
 st.sidebar.subheader("1. 注文の負荷")
 avg_orders_per_hour = st.sidebar.number_input(
     "1時間あたりの平均注文数 (件)", 
     value=default_orders, 
     step=5
 )
-arrival_interval = 60.0 / avg_orders_per_hour # 分単位に変換
+arrival_interval = 60.0 / avg_orders_per_hour
 
 st.sidebar.subheader("2. 現場のキャパシティ")
 num_packers = st.sidebar.slider(
@@ -75,13 +77,12 @@ avg_packing_time = st.sidebar.number_input(
 )
 
 st.sidebar.subheader("3. シミュレーション期間")
+# [cite_start]シミュレーション時間の設定 [cite: 142]
 sim_hours = st.sidebar.slider("稼働時間 (時間)", 1, 24, 8)
 
-# [cite_start]シミュレーション実行ボタン [cite: 156]
 if st.sidebar.button("シミュレーション実行"):
-    # [cite_start]シミュレーションの実行環境構築 [cite: 73]
     wait_times = []
-    env = simpy.Environment()
+    [cite_start]env = simpy.Environment() # [cite: 73]
     env.process(setup(env, num_packers, arrival_interval, avg_packing_time, wait_times))
     env.run(until=sim_hours * 60)
 
@@ -90,11 +91,14 @@ if st.sidebar.button("シミュレーション実行"):
     
     col1, col2, col3 = st.columns(3)
     with col1:
-        [cite_start]st.metric("総処理注文数", f"{len(wait_times)} 件") # [cite: 144]
+        # [cite_start]総来客数に相当する処理数 [cite: 22, 107]
+        st.metric("総処理注文数", f"{len(wait_times)} 件")
     with col2:
+        # [cite_start]平均待ち時間 [cite: 23, 118]
         avg_wait = np.mean(wait_times) if wait_times else 0
-        [cite_start]st.metric("平均待ち時間", f"{avg_wait:.2f} 分") # [cite: 147]
+        st.metric("平均待ち時間", f"{avg_wait:.2f} 分")
     with col3:
+        # [cite_start]最大待ち時間 [cite: 24, 121]
         max_wait = np.max(wait_times) if wait_times else 0
         st.metric("最大待ち時間", f"{max_wait:.2f} 分", delta=f"{max_wait - 10:.1f}分 (目安10分)", delta_color="inverse")
 
@@ -106,7 +110,6 @@ if st.sidebar.button("シミュレーション実行"):
     ax.set_ylabel("注文数")
     st.pyplot(fig)
 
-    # アドバイス機能（経営判断の支援）
     st.subheader("💡 現場へのアドバイス")
     if max_wait > 15:
         st.error(f"警告：最大待ち時間が{max_wait:.1f}分に達しています。発送締め切りに間に合わないリスクが高いです。スタッフを1名追加するか、残業を検討してください。")
