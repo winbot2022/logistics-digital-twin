@@ -15,9 +15,20 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 日本語フォント設定（Linuxサーバー/Streamlit Cloud/Render共通）
-jp_font_path = '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc'
-if os.path.exists(jp_font_path):
+# 日本語フォント設定（Render/Linux環境用）
+# ローカルディレクトリにフォントを置くか、システムフォントを参照する設定
+font_candidates = [
+    '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
+    '/usr/share/fonts/google-noto-cjk/NotoSansCJK-Regular.ttc',
+    './NotoSansCJK-Regular.ttc' # リポジトリに同封する場合
+]
+jp_font_path = None
+for path in font_candidates:
+    if os.path.exists(path):
+        jp_font_path = path
+        break
+
+if jp_font_path:
     prop = fm.FontProperties(fname=jp_font_path)
     plt.rcParams['font.family'] = prop.get_name()
 
