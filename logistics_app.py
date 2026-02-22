@@ -230,17 +230,30 @@ if st.sidebar.button("シミュレーション実行", use_container_width=True)
         # 比較グラフ：遅延率と月間損失
         fig2, ax2 = plt.subplots()
 
-        # 百万円単位に変換
-        loss_million = df[f"月間損失({workdays}日)"] / 1_000_000
+        # 百万円単位に変換し、小数1桁に丸める
+        loss_million = (df[f"月間損失({workdays}日)"] / 1_000_000).round(1)
         
-        ax2.bar(df["シナリオ"], loss_million)
+        # シナリオごとの色指定
+        color_map = {
+            "通常": "blue",
+            "繁忙": "red",
+            "低調": "green"
+        }
+        
+        colors = [color_map.get(s, "gray") for s in df["シナリオ"]]
+        
+        ax2.bar(df["シナリオ"], loss_million, color=colors)
         
         ax2.set_title("シナリオ別：月間損失（推定）")
         ax2.set_xlabel("シナリオ")
         ax2.set_ylabel("損失（百万円）")
         
-        # 1e6表示を強制的にオフ
+        # 科学表記を強制的にオフ
         ax2.ticklabel_format(style='plain', axis='y')
+        
+        # 棒の上に数値ラベル表示（小数1桁）
+        for i, v in enumerate(loss_million):
+            ax2.text(i, v + 0.05, f"{v:.1f}", ha='center', fontsize=9)
         
         st.pyplot(fig2)
 
