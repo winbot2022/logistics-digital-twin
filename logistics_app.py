@@ -206,15 +206,22 @@ if st.sidebar.button("シミュレーション実行", use_container_width=True)
                 "梱包時間(分)": round(ptime, 2),
                 "スタッフ(人)": staff,
                 "遅延率(%)": round(m["delay_rate"], 1),
-                df_display = df.copy()
-                df_display[f"月間損失({workdays}日)"] = df_display[f"月間損失({workdays}日)"].apply(lambda x: f"{x:,}")
-                st.dataframe(df_display, use_container_width=True)
+                f"月間損失({workdays}日)": m["monthly_loss"],
                 "最大待ち(分)": round(m["max_wait"], 2),
                 "平均待ち(分)": round(m["avg_wait"], 2),
                 "遅延件数": m["late_orders"],
                 "総到着件数": m["total_orders"],
             })
 
+            df = pd.DataFrame(rows)
+
+            # 表示用フォーマット（カンマ追加）
+            df_display = df.copy()
+            df_display[f"月間損失({workdays}日)"] = \
+                df_display[f"月間損失({workdays}日)"].apply(lambda x: f"{x:,}")
+            
+            st.dataframe(df_display, use_container_width=True)
+           
             if optimize_each_scenario:
                 r_staff, _ = recommend_staff(
                     orders, ptime, sim_hours, sla, loss_per_order, target_delay_rate,
