@@ -2,8 +2,5 @@
 # exit on error
 set -o errexit
 
+# ライブラリのインストールのみ実行
 pip install -r requirements.txt
-
-# 日本語フォントのインストール（Noto Sans CJK）
-mkdir -p ~/.fonts
-apt-get update && apt-get install -y fonts-noto-cjk
