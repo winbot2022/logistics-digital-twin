@@ -190,16 +190,17 @@ if st.sidebar.button("シミュレーション実行", use_container_width=True)
             ("低調", off_orders_mult, 1.0, num_packers),
         ]
 
+        # --- シナリオ結果の集計（表示はループ外で1回だけ） ---
         rows = []
         opt_rows = []
-
+        
         for name, o_mult, t_mult, staff in scenarios:
             orders = max(1, int(round(avg_orders_per_hour * o_mult)))
             ptime = max(0.1, float(avg_packing_time * t_mult))
-
+        
             wt = run_simulation(orders, staff, ptime, sim_hours, seed=42)
             m = evaluate(wt, sla, loss_per_order, workdays=workdays)
-
+        
             rows.append({
                 "シナリオ": name,
                 "注文数(件/時)": orders,
@@ -212,16 +213,7 @@ if st.sidebar.button("シミュレーション実行", use_container_width=True)
                 "遅延件数": m["late_orders"],
                 "総到着件数": m["total_orders"],
             })
-
-            df = pd.DataFrame(rows)
-
-            # 表示用フォーマット（カンマ追加）
-            df_display = df.copy()
-            df_display[f"月間損失({workdays}日)"] = \
-                df_display[f"月間損失({workdays}日)"].apply(lambda x: f"{x:,}")
-            
-            st.dataframe(df_display, use_container_width=True)
-           
+        
             if optimize_each_scenario:
                 r_staff, _ = recommend_staff(
                     orders, ptime, sim_hours, sla, loss_per_order, target_delay_rate,
@@ -232,9 +224,39 @@ if st.sidebar.button("シミュレーション実行", use_container_width=True)
                     "推奨スタッフ(人)": r_staff if r_staff is not None else "15人でも未達",
                     "現在との差": (r_staff - num_packers) if (r_staff is not None) else "-"
                 })
-
+        
+        # --- ここから先は「ループ外」：表は1回だけ表示 ---
         df = pd.DataFrame(rows)
-        st.dataframe(df, use_container_width=True)
+        
+        # 表の並び順を固定（通常→繁忙→低調）
+        order_map = {"通常": 0, "繁忙": 1, "低調": 2}
+        df = df.sort_values("シナリオ", key=lambda s: s.map(order_map)).reset_index(drop=True)
+        
+        money_col = f"月間損失({workdays}日)"
+        
+        # 数値のままカンマ表示（ソートも壊れにくい）
+        st.dataframe(
+            df.style.format({
+                money_col: "{:,.0f}",
+                "注文数(件/時)": "{:,.0f}",
+                "遅延件数": "{:,.0f}",
+                "総到着件数": "{:,.0f}",
+                "最大待ち(分)": "{:,.2f}",
+                "平均待ち(分)": "{:,.2f}",
+                "遅延率(%)": "{:,.1f}",
+                "梱包時間(分)": "{:,.2f}",
+                "スタッフ(人)": "{:,.0f}",
+            }),
+            use_container_width=True
+        )
+        
+        # （任意）シナリオ別の推奨人員表
+        if optimize_each_scenario:
+            st.subheader("🧭 シナリオ別：推奨人員（目標遅延率ベース）")
+            df_opt = pd.DataFrame(opt_rows).sort_values(
+                "シナリオ", key=lambda s: s.map(order_map)
+            ).reset_index(drop=True)
+            st.dataframe(df_opt, use_container_width=True)
 
         # 比較グラフ：遅延率と月間損失
         fig2, ax2 = plt.subplots()
