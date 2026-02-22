@@ -154,7 +154,7 @@ if st.sidebar.button("シミュレーション実行", use_container_width=True)
     # 分布
     fig, ax = plt.subplots()
     ax.hist(wt_base, bins=20, edgecolor="black")
-    ax.axvline(sla, linestyle="--", label="SLA")
+    ax.axvline(sla, color="red", linestyle="--", linewidth=2, label="SLA")
     ax.set_title("待ち時間分布（通常）")
     ax.set_xlabel("待ち時間（分）")
     ax.set_ylabel("注文数")
@@ -229,10 +229,19 @@ if st.sidebar.button("シミュレーション実行", use_container_width=True)
 
         # 比較グラフ：遅延率と月間損失
         fig2, ax2 = plt.subplots()
-        ax2.bar(df["シナリオ"], df[f"月間損失({workdays}日)"])
+
+        # 百万円単位に変換
+        loss_million = df[f"月間損失({workdays}日)"] / 1_000_000
+        
+        ax2.bar(df["シナリオ"], loss_million)
+        
         ax2.set_title("シナリオ別：月間損失（推定）")
         ax2.set_xlabel("シナリオ")
-        ax2.set_ylabel("損失（円）")
+        ax2.set_ylabel("損失（百万円）")
+        
+        # 1e6表示を強制的にオフ
+        ax2.ticklabel_format(style='plain', axis='y')
+        
         st.pyplot(fig2)
 
         fig3, ax3 = plt.subplots()
