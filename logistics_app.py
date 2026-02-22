@@ -15,22 +15,22 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 日本語フォント設定（Render/Linux環境用）
-# ローカルディレクトリにフォントを置くか、システムフォントを参照する設定
-font_candidates = [
-    '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
-    '/usr/share/fonts/google-noto-cjk/NotoSansCJK-Regular.ttc',
-    './NotoSansCJK-Regular.ttc' # リポジトリに同封する場合
-]
-jp_font_path = None
-for path in font_candidates:
-    if os.path.exists(path):
-        jp_font_path = path
-        break
+# --- 日本語フォント設定（リポジトリ内のファイルを直接指定） ---
+import os
+import matplotlib.font_manager as fm
 
-if jp_font_path:
-    prop = fm.FontProperties(fname=jp_font_path)
+# アップロードしたファイル名と一致させてください
+font_path = './NotoSansJP-Regular.ttf'
+
+if os.path.exists(font_path):
+    # フォントをMatplotlibに登録
+    fm.fontManager.addfont(font_path)
+    prop = fm.FontProperties(fname=font_path)
     plt.rcParams['font.family'] = prop.get_name()
+    # グラフ上のマイナス記号の文字化け防止
+    plt.rcParams['axes.unicode_minus'] = False
+else:
+    print(f"警告: {font_path} が見つかりません。デフォルトフォントを使用します。")
 
 # --- 2. 受信用魔法（URLパラメータ） ---
 query_params = st.query_params
