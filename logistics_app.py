@@ -311,11 +311,7 @@ if st.sidebar.button("シミュレーション実行", use_container_width=True)
         
         st.pyplot(fig3)
 
-        if optimize_each_scenario:
-            st.subheader("🧭 シナリオ別：推奨人員（目標遅延率ベース）")
-            st.dataframe(pd.DataFrame(opt_rows), use_container_width=True)
-
-    # --- 次のステップ（既存導線） ---
+        # --- 次のステップ（既存導線） ---
     st.markdown("---")
     st.subheader("🚀 次のステップへ")
     cA, cB = st.columns(2)
