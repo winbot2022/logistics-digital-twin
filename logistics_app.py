@@ -97,6 +97,15 @@ def recommend_staff(avg_orders_per_hour, avg_packing_time, sim_hours, sla, loss_
             return staff, m
     return None, None
 
+def recommend_staff_by_maxwait(avg_orders_per_hour, avg_packing_time, sim_hours, max_wait_limit,
+                               min_staff=1, max_staff=15, seed=42):
+    for staff in range(min_staff, max_staff + 1):
+        wt = run_simulation(avg_orders_per_hour, staff, avg_packing_time, sim_hours, seed=seed)
+        max_wait = float(np.max(wt)) if len(wt) else 0.0
+        if max_wait <= max_wait_limit:
+            return staff, max_wait
+    return None, None
+
 # --- UI ---
 st.title("📦 物流デジタルツイン診断")
 st.markdown("### ②損失金額換算＋①人員最適化＋④波動シナリオ比較（最終拡張版）")
@@ -116,6 +125,10 @@ workdays = st.sidebar.number_input("月間稼働日（換算）", value=20, min_
 st.sidebar.markdown("---")
 st.sidebar.subheader("① 人員最適化の設定")
 target_delay_rate = st.sidebar.slider("目標遅延率（%）", 1, 20, 5)
+
+max_wait_limit = st.sidebar.number_input(
+    "締切遵守ライン（最大待ちの上限・分）", value=15.0, min_value=0.0, step=0.5
+)
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("④ 波動シナリオ比較")
@@ -193,6 +206,7 @@ if st.sidebar.button("シミュレーション実行", use_container_width=True)
         # --- シナリオ結果の集計（表示はループ外で1回だけ） ---
         rows = []
         opt_rows = []
+        opt_rows_maxwait = []
         
         for name, o_mult, t_mult, staff in scenarios:
             orders = max(1, int(round(avg_orders_per_hour * o_mult)))
@@ -224,6 +238,17 @@ if st.sidebar.button("シミュレーション実行", use_container_width=True)
                     "推奨スタッフ(人)": r_staff if r_staff is not None else "15人でも未達",
                     "現在との差": (r_staff - num_packers) if (r_staff is not None) else "-"
                 })
+                r_staff_mw, mw_value = recommend_staff_by_maxwait(
+                    orders, ptime, sim_hours, max_wait_limit,
+                    min_staff=1, max_staff=15, seed=42
+                )
+                opt_rows_maxwait.append({
+                    "シナリオ": name,
+                    "推奨スタッフ(人)": r_staff_mw if r_staff_mw is not None else "15人でも未達",
+                    "最大待ち(分)": round(mw_value, 2) if mw_value is not None else "-",
+                    "現在との差": (r_staff_mw - num_packers) if (r_staff_mw is not None) else "-"
+                })
+        
         
         # --- ここから先は「ループ外」：表は1回だけ表示 ---
         df = pd.DataFrame(rows)
@@ -257,6 +282,12 @@ if st.sidebar.button("シミュレーション実行", use_container_width=True)
                 "シナリオ", key=lambda s: s.map(order_map)
             ).reset_index(drop=True)
             st.dataframe(df_opt, use_container_width=True)
+
+            st.subheader("🧭 シナリオ別：推奨人員（締切遵守（最大待ち）ベース）")
+            df_opt_mw = pd.DataFrame(opt_rows_maxwait).sort_values(
+                "シナリオ", key=lambda s: s.map(order_map)
+            ).reset_index(drop=True)
+            st.dataframe(df_opt_mw, use_container_width=True)
 
         # 比較グラフ：遅延率と月間損失
         fig2, ax2 = plt.subplots()
