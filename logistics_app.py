@@ -206,7 +206,9 @@ if st.sidebar.button("シミュレーション実行", use_container_width=True)
                 "梱包時間(分)": round(ptime, 2),
                 "スタッフ(人)": staff,
                 "遅延率(%)": round(m["delay_rate"], 1),
-                f"月間損失({workdays}日)": m["monthly_loss"],
+                df_display = df.copy()
+                df_display[f"月間損失({workdays}日)"] = df_display[f"月間損失({workdays}日)"].apply(lambda x: f"{x:,}")
+                st.dataframe(df_display, use_container_width=True)
                 "最大待ち(分)": round(m["max_wait"], 2),
                 "平均待ち(分)": round(m["avg_wait"], 2),
                 "遅延件数": m["late_orders"],
@@ -258,10 +260,26 @@ if st.sidebar.button("シミュレーション実行", use_container_width=True)
         st.pyplot(fig2)
 
         fig3, ax3 = plt.subplots()
-        ax3.bar(df["シナリオ"], df["遅延率(%)"])
+
+        # 色指定（損失グラフと統一）
+        color_map = {
+            "通常": "blue",
+            "繁忙": "red",
+            "低調": "green"
+        }
+        
+        colors = [color_map.get(s, "gray") for s in df["シナリオ"]]
+        
+        ax3.bar(df["シナリオ"], df["遅延率(%)"], color=colors)
+        
         ax3.set_title("シナリオ別：遅延率（SLA超）")
         ax3.set_xlabel("シナリオ")
         ax3.set_ylabel("遅延率（%）")
+        
+        # 棒の上に数値表示
+        for i, v in enumerate(df["遅延率(%)"]):
+            ax3.text(i, v + 0.5, f"{v:.1f}%", ha='center', fontsize=9)
+        
         st.pyplot(fig3)
 
         if optimize_each_scenario:
