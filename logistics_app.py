@@ -108,7 +108,6 @@ def recommend_staff_by_maxwait(avg_orders_per_hour, avg_packing_time, sim_hours,
 
 # --- UI ---
 st.title("📦 物流デジタルツイン診断")
-st.markdown("### ②損失金額換算＋①人員最適化＋④波動シナリオ比較（最終拡張版）")
 
 st.sidebar.header("診断条件（ベース）")
 avg_orders_per_hour = st.sidebar.number_input("1時間あたりの平均注文数", value=default_orders, min_value=1, step=5)
