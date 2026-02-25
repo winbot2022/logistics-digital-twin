@@ -116,13 +116,13 @@ avg_packing_time = st.sidebar.number_input("平均梱包時間（分）", value=
 sim_hours = st.sidebar.slider("稼働時間（時間）", 1, 24, 8)
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("② 損失換算の設定")
+st.sidebar.subheader("損失換算の設定")
 sla = st.sidebar.number_input("許容待ち時間SLA（分）", value=10.0, min_value=0.0, step=0.5)
 loss_per_order = st.sidebar.number_input("遅延1件あたり損失（円）", value=500, min_value=0, step=50)
 workdays = st.sidebar.number_input("月間稼働日（換算）", value=20, min_value=1, step=1)
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("① 人員最適化の設定")
+st.sidebar.subheader("人員最適化の設定")
 target_delay_rate = st.sidebar.slider("目標遅延率（%）", 1, 20, 5)
 
 max_wait_limit = st.sidebar.number_input(
@@ -130,7 +130,7 @@ max_wait_limit = st.sidebar.number_input(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("④ 波動シナリオ比較")
+st.sidebar.subheader("波動シナリオ比較")
 enable_scenarios = st.sidebar.checkbox("波動シナリオ比較を有効化", value=True)
 
 # 繁忙・低調を「注文数倍率」で定義、繁忙は梱包時間も悪化しやすいので倍率を用意
@@ -342,12 +342,19 @@ if st.sidebar.button("シミュレーション実行", use_container_width=True)
         st.pyplot(fig3)
 
         # --- 次のステップ（既存導線） ---
-    st.markdown("---")
-    st.subheader("🚀 次のステップへ")
-    cA, cB = st.columns(2)
-    with cA:
-        st.info("**本格導入・カスタマイズ相談**\n\n貴社の実データを反映した専用モデルを構築。")
-        st.link_button("無料相談・予約", "https://victorconsulting.jp/contact/?service=logistics", use_container_width=True)
-    with cB:
-        st.success("**月額1万円で本格運用**\n\n人員配置を毎日最適化するダッシュボードを提供。")
-        st.link_button("サービス詳細", "https://victorconsulting.jp/logistics-digital-twin/", use_container_width=True)
+    # --- 次のステップ（最終クロージング導線） ---
+st.markdown("---")
+st.subheader("🚀 次のステップへ")
+
+st.success(
+    "**貴社専用モデルを構築します**\n\n"
+    "無料診断は入口に過ぎません。\n"
+    "実データを反映した『物流構造再現設計』で、"
+    "人員判断を数値で確定させます。"
+)
+
+st.link_button(
+    "物流構造再現設計を申し込む",
+    "https://victorconsulting.jp/logistics-structure/",
+    use_container_width=True
+)
