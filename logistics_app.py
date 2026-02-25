@@ -341,20 +341,19 @@ if st.sidebar.button("シミュレーション実行", use_container_width=True)
         
         st.pyplot(fig3)
 
-        # --- 次のステップ（既存導線） ---
-    # --- 次のステップ（最終クロージング導線） ---
-st.markdown("---")
-st.subheader("🚀 次のステップへ")
-
-st.success(
-    "**貴社専用モデルを構築します**\n\n"
-    "無料診断は入口に過ぎません。\n"
-    "実データを反映した『物流構造再現設計』で、"
-    "人員判断を数値で確定させます。"
-)
-
-st.link_button(
-    "物流構造再現設計を申し込む",
-    "https://victorconsulting.jp/logistics-structure/",
-    use_container_width=True
-)
+        # --- 次のステップ（最終クロージング導線） ---
+        st.markdown("---")
+        st.subheader("🚀 次のステップへ")
+        
+        st.success(
+            "**貴社専用モデルを構築します**\n\n"
+            "無料診断は入口に過ぎません。\n"
+            "実データを反映した『物流構造再現設計』で、"
+            "人員判断を数値で確定させます。"
+        )
+        
+        st.link_button(
+            "物流構造再現設計を申し込む",
+            "https://victorconsulting.jp/logistics-structure/",
+            use_container_width=True
+        )
