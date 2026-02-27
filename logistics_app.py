@@ -110,11 +110,7 @@ def recommend_staff_by_maxwait(avg_orders_per_hour, avg_packing_time, sim_hours,
 # --- UI ---
 st.title("📦 物流デジタルツイン診断")
 st.markdown("### 発送ライン・人員配置最適化シミュレーター")
-
-st.info("📱 診断条件の入力は、画面左上の「≡」からサイドメニューを開いて行ってください。")
-st.markdown("### 発送ライン・人員配置最適化シミュレーター")
-
-st.info("📱 診断条件の入力は、画面左上の「≡」からサイドメニューを開いて行ってください。")
+st.info("📱 診断条件の入力は、PCでは左側のサイドバーから、スマホでは左上の「≫」からサイドメニューを開いて行ってください。")
 
 st.sidebar.header("診断条件（ベース）")
 avg_orders_per_hour = st.sidebar.number_input("1時間あたりの平均注文数", value=default_orders, min_value=1, step=5)
