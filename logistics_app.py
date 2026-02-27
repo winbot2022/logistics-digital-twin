@@ -11,7 +11,7 @@ import matplotlib.font_manager as fm
 st.set_page_config(
     page_title="物流デジタルツイン診断 | 発送ライン最適化シミュレーター",
     page_icon="📦",
-    layout="wide"
+    layout="wide",
     initial_sidebar_state="collapsed"
 )
 
